@@ -1,0 +1,11 @@
+# Pesado ou gerado: nunca vai para o repositório
+runtime/
+modelo/parakeet-*/
+dados/
+dist/
+*.zip
+__pycache__/
+*.pyc
+*.bak*
+*.antes-*
+.venv/

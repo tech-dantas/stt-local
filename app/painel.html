@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>STT Portátil</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --texto: #1c2430; --suave: #5d6b7c; --borda: #dfe4ea;
+    --acento: #2f6fdf; --acento-texto: #ffffff; --ok: #1f8a4c; --aviso: #b26a00; --ruim: #c0392b;
+    --codigo: #eef1f5; --raio: 10px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #12161c; --card: #1a2029; --texto: #e6ebf1; --suave: #9aa7b6; --borda: #2a323d;
+      --acento: #5b93f0; --acento-texto: #0d1117; --ok: #3cc07a; --aviso: #e0a03a; --ruim: #ef6b5e; --codigo: #222a35; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--texto); font: 15px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 16px; margin: 0 0 12px; }
+  .sub { color: var(--suave); font-size: 13px; }
+  .pilula { padding: 3px 10px; border-radius: 99px; font-size: 13px; font-weight: 600; background: var(--codigo); }
+  .pilula.ok { color: var(--ok); } .pilula.aviso { color: var(--aviso); } .pilula.ruim { color: var(--ruim); }
+  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; }
+  .largo { grid-column: 1 / -1; }
+  .metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .metrica { background: var(--codigo); border-radius: 8px; padding: 10px; }
+  .metrica span { display: block; color: var(--suave); font-size: 12px; }
+  .metrica b { font-size: 18px; font-variant-numeric: tabular-nums; }
+  .barra { height: 6px; background: var(--borda); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--acento); width: 0; transition: width .4s; }
+  label { display: block; font-size: 13px; color: var(--suave); margin: 10px 0 4px; }
+  select, input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--borda); border-radius: 8px;
+    background: var(--bg); color: var(--texto); font: inherit; }
+  .check { display: flex; gap: 8px; align-items: flex-start; color: var(--texto); font-size: 14px; margin-top: 12px; }
+  .check input { margin-top: 4px; }
+  button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--borda); background: var(--card); color: var(--texto);
+    font: inherit; cursor: pointer; }
+  button.primario { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 600; }
+  button.perigo { color: var(--ruim); }
+  button:disabled { opacity: .5; cursor: default; }
+  .linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+  .msg { font-size: 13px; color: var(--suave); min-height: 20px; margin-top: 8px; }
+  .msg.ok { color: var(--ok); } .msg.ruim { color: var(--ruim); }
+  .endpoint { display: flex; gap: 8px; align-items: center; justify-content: space-between; border-top: 1px solid var(--borda); padding: 8px 0; }
+  .endpoint:first-of-type { border-top: 0; }
+  .endpoint code { font-size: 13px; word-break: break-all; }
+  .metodo { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: var(--codigo); color: var(--acento); margin-right: 6px; }
+  pre { background: var(--codigo); padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12.5px; margin: 8px 0 0; }
+  .resultado { background: var(--codigo); border-radius: 8px; padding: 10px; min-height: 48px; white-space: pre-wrap; margin-top: 10px; }
+  .gravando { color: var(--ruim) !important; border-color: var(--ruim) !important; }
+  footer { margin-top: 18px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--suave); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>STT Portátil</h1>
+    <span class="pilula" id="estado">…</span>
+    <span class="sub" id="modelo">Parakeet TDT 0.6B v3 · processador</span>
+  </header>
+
+  <div class="grade">
+    <section class="card largo">
+      <h2>Endpoints</h2>
+      <div id="endpoints"></div>
+      <pre id="exemplo"></pre>
+      <p class="sub">Compatível com a API de transcrição da OpenAI: num cliente OpenAI, use <code id="baseurl"></code> como <code>base_url</code>
+        e qualquer <code>api_key</code>. <code>response_format</code>: json, verbose_json (com <code>timestamp_granularities[]=word</code>) ou text.</p>
+    </section>
+
+    <section class="card">
+      <h2>Uso agora</h2>
+      <div class="metricas">
+        <div class="metrica"><span>CPU do serviço</span><b id="cpu-servico">—</b><div class="barra"><i id="barra-servico"></i></div></div>
+        <div class="metrica"><span>CPU da máquina</span><b id="cpu-sistema">—</b><div class="barra"><i id="barra-sistema"></i></div></div>
+        <div class="metrica"><span>RAM do serviço</span><b id="ram">—</b></div>
+        <div class="metrica"><span>Núcleos em uso</span><b id="nucleos-uso">—</b></div>
+      </div>
+      <p class="sub" id="cpu-info"></p>
+    </section>
+
+    <section class="card">
+      <h2>Transcrições</h2>
+      <div class="metricas">
+        <div class="metrica"><span>Feitas</span><b id="c-total">0</b></div>
+        <div class="metrica"><span>Áudio transcrito</span><b id="c-audio">0 s</b></div>
+        <div class="metrica"><span>Velocidade média</span><b id="c-vel">—</b></div>
+        <div class="metrica"><span>Última</span><b id="c-ultima">—</b></div>
+      </div>
+      <p class="sub" id="c-erros"></p>
+    </section>
+
+    <section class="card">
+      <h2>Configuração</h2>
+      <label for="cfg-nucleos">Núcleos do processador</label>
+      <select id="cfg-nucleos"></select>
+      <label for="cfg-porta">Porta</label>
+      <input id="cfg-porta" type="number" min="1024" max="65535" />
+      <label class="check"><input type="checkbox" id="cfg-rede" />
+        <span>Aceitar conexões de outros computadores (rede local e tailnet). Desligado, só esta máquina usa.</span></label>
+      <label class="check"><input type="checkbox" id="cfg-trava" />
+        <span>Trava de silêncio: áudio sem fala (ruído, respiração, clique) volta vazio, em vez de virar uma palavra solta.</span></label>
+      <label class="check"><input type="checkbox" id="cfg-auto" />
+        <span>Iniciar com o Windows, sem janela.</span></label>
+      <div class="linha"><button class="primario" id="salvar">Salvar</button></div>
+      <p class="msg" id="cfg-msg"></p>
+    </section>
+
+    <section class="card">
+      <h2>Testar</h2>
+      <p class="sub">Grave uma fala ou escolha um arquivo de áudio ou vídeo.</p>
+      <div class="linha">
+        <button class="primario" id="gravar">● Gravar</button>
+        <label style="margin:0"><input type="file" id="arquivo" accept="audio/*,video/*" /></label>
+      </div>
+      <div class="resultado" id="resultado">—</div>
+      <p class="msg" id="teste-msg"></p>
+    </section>
+  </div>
+
+  <footer>
+    <span id="rodape"></span>
+    <button class="perigo" id="parar">Desligar o serviço</button>
+  </footer>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+let ultimo = null, editando = false;
+
+function msg(sel, texto, tipo = "") { const el = $(sel); el.textContent = texto; el.className = `msg ${tipo}`; }
+function fmtSeg(s) { if (s < 60) return `${s.toFixed(1)} s`; const m = Math.floor(s / 60); return m < 60 ? `${m} min ${Math.round(s % 60)} s` : `${(s / 3600).toFixed(1)} h`; }
+
+function desenhar(st) {
+  ultimo = st;
+  const estado = $("#estado");
+  estado.textContent = st.estado;
+  estado.className = `pilula ${st.estado === "no ar" ? "ok" : st.estado === "erro" ? "ruim" : "aviso"}`;
+  if (st.erro) msg("#cfg-msg", `Falha ao carregar o modelo: ${st.erro}`, "ruim");
+
+  const porta = st.config.porta;
+  const bases = [{ ip: "127.0.0.1", tipo: "esta máquina" }, ...st.enderecos];
+  $("#endpoints").innerHTML = bases.map((b) => {
+    const url = `http://${b.ip}:${porta}/v1/audio/transcriptions`;
+    return `<div class="endpoint"><div><span class="metodo">POST</span><code>${esc(url)}</code> <span class="sub">· ${esc(b.tipo)}</span></div>
+      <button data-copiar="${esc(url)}">Copiar</button></div>`;
+  }).join("") +
+    `<div class="endpoint"><div><span class="metodo">POST</span><code>http://127.0.0.1:${porta}/v1/audio/transcriptions/base64</code></div></div>
+     <div class="endpoint"><div><span class="metodo">GET</span><code>http://127.0.0.1:${porta}/health</code> · <code>/v1/models</code></div></div>`;
+  if (!st.config.rede) $("#endpoints").insertAdjacentHTML("beforeend", `<p class="sub">Só esta máquina acessa. Para outros computadores, marque "Aceitar conexões" na configuração.</p>`);
+  $("#baseurl").textContent = `http://127.0.0.1:${porta}/v1`;
+  $("#exemplo").textContent = `curl -X POST http://127.0.0.1:${porta}/v1/audio/transcriptions \\\n  -F "file=@audio.ogg" -F "response_format=json"`;
+
+  const u = st.uso, n = st.nucleos;
+  $("#cpu-servico").textContent = `${u.cpu_servico.toFixed(0)}%`;
+  $("#cpu-sistema").textContent = `${u.cpu_sistema.toFixed(0)}%`;
+  $("#barra-servico").style.width = `${Math.min(100, u.cpu_servico)}%`;
+  $("#barra-sistema").style.width = `${Math.min(100, u.cpu_sistema)}%`;
+  $("#ram").textContent = `${(u.ram_servico_mb / 1024).toFixed(2)} GB`;
+  $("#nucleos-uso").textContent = `${n.em_uso || "—"} de ${n.fisicos}`;
+  $("#cpu-info").textContent = `Processador com ${n.fisicos} núcleos físicos (${n.logicos} lógicos). Automático usa ${n.automatico}: 1/4 dos físicos, entre 1 e 8. A CPU do serviço só sobe enquanto transcreve.`;
+
+  const c = st.contadores;
+  $("#c-total").textContent = c.transcricoes;
+  $("#c-audio").textContent = fmtSeg(c.audio_s);
+  $("#c-vel").textContent = c.velocidade_media ? `${c.velocidade_media}× tempo real` : "—";
+  $("#c-ultima").textContent = c.ultima ? `${c.ultima.duracao} s em ${c.ultima.tempo} s` : "—";
+  const notas = [];
+  if (c.sem_fala) notas.push(`${c.sem_fala} áudio(s) sem fala, devolvidos vazios pela trava de silêncio.`);
+  if (c.erros) notas.push(`${c.erros} pedido(s) com erro desde que abriu.`);
+  if (!st.trava_silencio.disponivel) notas.push("Trava de silêncio indisponível: falta modelo\\silero_vad_v6.onnx.");
+  $("#c-erros").textContent = notas.join(" ");
+
+  if (!editando) {
+    const sel = $("#cfg-nucleos");
+    const max = Math.max(n.logicos, 1);
+    const opcoes = [`<option value="auto">Automático (${n.automatico})</option>`];
+    for (let i = 1; i <= max; i++) opcoes.push(`<option value="${i}">${i}${i === n.fisicos ? " (todos os físicos)" : ""}</option>`);
+    sel.innerHTML = opcoes.join("");
+    sel.value = String(st.config.nucleos);
+    $("#cfg-porta").value = porta;
+    $("#cfg-rede").checked = st.config.rede;
+    $("#cfg-auto").checked = st.autostart;
+    $("#cfg-trava").checked = st.config.trava_silencio;
+    $("#cfg-trava").disabled = !st.trava_silencio.disponivel;
+  }
+  const desde = new Date(st.no_ar_desde * 1000);
+  $("#rodape").textContent = `Versão ${st.versao} · no ar desde ${desde.toLocaleString("pt-BR")}`;
+}
+
+async function atualizar() {
+  try {
+    const r = await fetch("/api/status", { cache: "no-store" });
+    desenhar(await r.json());
+  } catch {
+    $("#estado").textContent = "fora do ar";
+    $("#estado").className = "pilula ruim";
+  }
+}
+
+document.addEventListener("click", async (e) => {
+  const texto = e.target.dataset?.copiar;
+  if (!texto) return;
+  try { await navigator.clipboard.writeText(texto); e.target.textContent = "Copiado"; } catch { e.target.textContent = "Selecione e copie"; }
+  setTimeout(() => (e.target.textContent = "Copiar"), 1500);
+});
+
+["#cfg-nucleos", "#cfg-porta", "#cfg-rede", "#cfg-auto", "#cfg-trava"].forEach((s) => $(s).addEventListener("input", () => (editando = true)));
+
+$("#salvar").addEventListener("click", async () => {
+  const botao = $("#salvar");
+  botao.disabled = true;
+  try {
+    const porta = parseInt($("#cfg-porta").value, 10);
+    const r = await fetch("/api/config", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nucleos: $("#cfg-nucleos").value, porta, rede: $("#cfg-rede").checked,
+        trava_silencio: $("#cfg-trava").checked }) });
+    const corpo = await r.json();
+    if (!r.ok) throw new Error(corpo.detail || r.statusText);
+    if ($("#cfg-auto").checked !== ultimo?.autostart) {
+      await fetch("/api/autostart", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ativo: $("#cfg-auto").checked }) });
+    }
+    editando = false;
+    if (corpo.reiniciando) {
+      msg("#cfg-msg", `Reiniciando na porta ${porta}…`, "ok");
+      const destino = `http://127.0.0.1:${porta}/`;
+      for (let i = 0; i < 40; i++) {
+        await new Promise((ok) => setTimeout(ok, 500));
+        try { await fetch(`${destino}health`, { mode: "no-cors" }); location.href = destino; return; } catch {}
+      }
+      msg("#cfg-msg", `Não voltou em 20 s. Abra ${destino} ou rode o INICIAR.bat.`, "ruim");
+    } else {
+      msg("#cfg-msg", "Salvo.", "ok");
+      await atualizar();
+    }
+  } catch (erro) {
+    msg("#cfg-msg", erro.message, "ruim");
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+async function transcrever(blob, nome) {
+  msg("#teste-msg", "Transcrevendo…");
+  $("#resultado").textContent = "…";
+  const dados = new FormData();
+  dados.append("file", blob, nome);
+  dados.append("response_format", "verbose_json");
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/v1/audio/transcriptions", { method: "POST", body: dados });
+    const corpo = await r.json();
+    if (!r.ok) throw new Error(corpo.detail || r.statusText);
+    $("#resultado").textContent = corpo.text.trim() || "(sem fala reconhecida)";
+    msg("#teste-msg", `${corpo.duration.toFixed(1)} s de áudio · transcrito em ${corpo.elapsed.toFixed(2)} s · resposta em ${((performance.now() - t0) / 1000).toFixed(2)} s`, "ok");
+  } catch (erro) {
+    $("#resultado").textContent = "—";
+    msg("#teste-msg", erro.message, "ruim");
+  }
+  atualizar();
+}
+
+$("#arquivo").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) transcrever(f, f.name); });
+
+let gravador = null;
+$("#gravar").addEventListener("click", async () => {
+  const botao = $("#gravar");
+  if (gravador) { gravador.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const partes = [];
+    gravador = new MediaRecorder(stream);
+    gravador.ondataavailable = (e) => e.data.size && partes.push(e.data);
+    gravador.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      gravador = null;
+      botao.textContent = "● Gravar";
+      botao.classList.remove("gravando");
+      transcrever(new Blob(partes, { type: "audio/webm" }), "fala.webm");
+    };
+    gravador.start();
+    botao.textContent = "■ Parar e transcrever";
+    botao.classList.add("gravando");
+    msg("#teste-msg", "Gravando… fale e clique em Parar.");
+  } catch (erro) {
+    msg("#teste-msg", `Microfone: ${erro.message}`, "ruim");
+  }
+});
+
+$("#parar").addEventListener("click", async () => {
+  if (!confirm("Desligar o STT Portátil? Quem usa o endpoint fica sem transcrição até abrir de novo.")) return;
+  await fetch("/api/parar", { method: "POST" }).catch(() => {});
+  $("#estado").textContent = "desligado";
+  $("#estado").className = "pilula ruim";
+});
+
+atualizar();
+setInterval(() => { if (document.visibilityState === "visible") atualizar(); }, 2000);
+</script>
+</body>
+</html>
