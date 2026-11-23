@@ -56,7 +56,7 @@ import ditado  # noqa: E402
 import mcp_stt  # noqa: E402
 import silencio  # noqa: E402
 
-VERSAO = "2.0.0-dev"
+VERSAO = "2.0.0"
 RAIZ = Path(__file__).resolve().parent.parent
 APP = RAIZ / "app"
 DADOS = RAIZ / "dados"
