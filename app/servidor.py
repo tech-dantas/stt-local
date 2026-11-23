@@ -51,6 +51,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse  # n
 from pydantic import BaseModel  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import baixar_modelo  # noqa: E402
 import silencio  # noqa: E402
 
 VERSAO = "2.0.0-dev"
@@ -145,6 +146,7 @@ class Estado:
 
 
 E = Estado()
+DOWNLOAD = baixar_modelo.Download()
 PROC = psutil.Process()
 
 
@@ -250,6 +252,8 @@ def transcrever(conteudo: bytes, formato: str, idioma: str | None, com_palavras:
     todas: list[dict[str, Any]] = []
     with E.trava:
         if E.modelo is None:
+            if not baixar_modelo.modelo_presente(PASTA_MODELO):
+                raise HTTPException(503, "Modelo ainda não baixado. Abra a tela do STT Local e clique em \"Baixar modelo\".")
             raise HTTPException(503, "Modelo ainda carregando.")
         partes = blocos(audio)
         for ini, fim in partes:
@@ -324,7 +328,10 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
                 E.detector = silencio.DetectorDeFala(SILERO)
             except Exception:  # noqa: BLE001
                 log.exception("Trava de silêncio indisponível (%s): seguindo sem ela.", SILERO)
-            carregar_modelo(nucleos_da_config(cfg))
+            if baixar_modelo.modelo_presente(PASTA_MODELO):
+                carregar_modelo(nucleos_da_config(cfg))
+            else:
+                log.info("Modelo ainda não baixado: use o botão \"Baixar modelo\" na tela.")
         except Exception as exc:  # noqa: BLE001
             E.erro_carga = f"{type(exc).__name__}: {exc}"
             log.exception("Falha ao carregar o modelo")
@@ -400,9 +407,22 @@ async def rota_base64(pedido: TranscricaoBase64):
     return await run_in_threadpool(_rodar, conteudo, pedido.response_format, pedido.language, False)
 
 
+def estado_servico() -> str:
+    if E.modelo is not None:
+        return "no ar"
+    if E.erro_carga:
+        return "erro"
+    if DOWNLOAD.ativo():
+        return "baixando"
+    if not baixar_modelo.modelo_presente(PASTA_MODELO):
+        return "sem modelo"
+    return "carregando"
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok" if E.modelo is not None else ("erro" if E.erro_carga else "carregando"),
+    st = estado_servico()
+    return {"status": {"no ar": "ok", "sem modelo": "sem_modelo"}.get(st, st),
             "version": VERSAO, "model": MODELO_ID, "compute_type": "int8", "device": "cpu",
             "threads": E.nucleos, "trava_silencio": E.detector is not None and E.trava_ligada,
             "formatos": sorted(EXTENSOES)}
@@ -436,8 +456,9 @@ def status():
     fisicos, logicos = nucleos_fisicos(), psutil.cpu_count() or 1
     return {
         "versao": VERSAO, "modelo": MODELO_ID,
-        "estado": "no ar" if E.modelo is not None else ("erro" if E.erro_carga else "carregando"),
+        "estado": estado_servico(),
         "erro": E.erro_carga,
+        "download": DOWNLOAD.resumo(),
         "config": cfg,
         "nucleos": {"em_uso": E.nucleos, "automatico": nucleos_automaticos(fisicos), "fisicos": fisicos, "logicos": logicos},
         "uso": {"cpu_servico": round(E.cpu_processo, 1), "cpu_sistema": round(E.cpu_sistema, 1),
@@ -521,6 +542,32 @@ def autostart(pedido: PedidoAutostart):
     return {"autostart": STARTUP_VBS.exists()}
 
 
+def _modelo_baixado() -> None:
+    log.info("Modelo baixado e conferido. Carregando…")
+    E.erro_carga, E.carregando = None, True
+    try:
+        carregar_modelo(nucleos_da_config(ler_config()))
+    except Exception as exc:  # noqa: BLE001
+        E.erro_carga = f"{type(exc).__name__}: {exc}"
+        log.exception("Falha ao carregar o modelo")
+    finally:
+        E.carregando = False
+
+
+@app.post("/api/modelo/baixar")
+def modelo_baixar():
+    if E.modelo is not None or baixar_modelo.modelo_presente(PASTA_MODELO):
+        return {"ok": True, "detalhe": "O modelo já está baixado."}
+    DOWNLOAD.iniciar(PASTA_MODELO, ao_terminar=_modelo_baixado)
+    return {"ok": True, "download": DOWNLOAD.resumo()}
+
+
+@app.post("/api/modelo/cancelar")
+def modelo_cancelar():
+    DOWNLOAD.cancelar()
+    return {"ok": True}
+
+
 @app.post("/api/parar")
 def parar():
     log.info("Parado pela tela.")
@@ -548,9 +595,8 @@ def main() -> int:
         if abrir:
             webbrowser.open(tela_url)
         return 0
-    if not (PASTA_MODELO / "encoder-model.int8.onnx").exists():
-        print(f"  Modelo não encontrado em {PASTA_MODELO}")
-        return 1
+    if not baixar_modelo.modelo_presente(PASTA_MODELO):
+        print("  Primeira vez? O modelo (~640 MB) ainda não foi baixado: clique em \"Baixar modelo\" na tela.")
     print(f"\n  STT Portátil {VERSAO} — Parakeet TDT 0.6B v3 no processador")
     print(f"  Tela:      {tela_url}")
     print(f"  Endpoint:  http://127.0.0.1:{porta}/v1/audio/transcriptions" + ("   (aceitando da rede)" if cfg["rede"] else ""))
