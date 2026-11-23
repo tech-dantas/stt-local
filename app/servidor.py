@@ -144,6 +144,7 @@ class Estado:
         self.erros = 0
         self.segundos_audio = 0.0
         self.segundos_processo = 0.0
+        self.audio_com_fala = 0.0
         self.ultima: dict[str, Any] | None = None
         self.cpu_processo = 0.0
         self.cpu_sistema = 0.0
@@ -275,7 +276,9 @@ def transcrever(conteudo: bytes, formato: str, idioma: str | None, com_palavras:
     if not partes:
         E.sem_fala += 1
     E.segundos_audio += duracao
-    E.segundos_processo += decorrido
+    if partes:  # velocidade média só com fala (áudio sem fala sai em ~0 s e distorce)
+        E.audio_com_fala += duracao
+        E.segundos_processo += decorrido
     E.ultima = {"duracao": round(duracao, 1), "tempo": round(decorrido, 2), "quando": time.time(),
                 "velocidade": round(duracao / decorrido, 1) if decorrido else None}
     if not partes:
@@ -524,7 +527,7 @@ def status():
         "trava_silencio": {"ligada": E.trava_ligada, "disponivel": E.detector is not None},
         "contadores": {"transcricoes": E.pedidos, "erros": E.erros, "sem_fala": E.sem_fala, "audio_s": round(E.segundos_audio, 1),
                        "processo_s": round(E.segundos_processo, 2),
-                       "velocidade_media": round(E.segundos_audio / E.segundos_processo, 1) if E.segundos_processo else None,
+                       "velocidade_media": round(E.audio_com_fala / E.segundos_processo, 1) if E.segundos_processo else None,
                        "ultima": E.ultima},
         "no_ar_desde": E.inicio,
         "enderecos": ips_locais() if cfg["rede"] else [],
@@ -669,18 +672,37 @@ def porta_ocupada(porta: int) -> bool:
         return s.connect_ex(("127.0.0.1", porta)) == 0
 
 
+def eh_stt_local(porta: int) -> bool:
+    """A porta ocupada é um STT Local já aberto (e não outro programa)?"""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{porta}/v1/models", timeout=2) as r:
+            return '"stt-local"' in r.read(4096).decode("utf-8", "ignore")
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def main() -> int:
     cfg = ler_config()
     if not CONFIG.exists():
         gravar_config(cfg)
     porta, host = cfg["porta"], "0.0.0.0" if cfg["rede"] else "127.0.0.1"
-    tela_url = f"http://127.0.0.1:{porta}/"
     abrir = "--abrir" in sys.argv
     if porta_ocupada(porta):
-        print(f"  A porta {porta} já está em uso (o STT Local já está aberto?). Tela: {tela_url}")
-        if abrir:
-            webbrowser.open(tela_url)
-        return 0
+        if eh_stt_local(porta):
+            tela_url = f"http://127.0.0.1:{porta}/"
+            print(f"  O STT Local já está aberto. Tela: {tela_url}")
+            if abrir:
+                webbrowser.open(tela_url)
+            return 0
+        livre = next((p for p in range(porta + 1, porta + 50) if not porta_ocupada(p)), None)
+        if livre is None:
+            print(f"  A porta {porta} está ocupada por outro programa e não achei outra livre. Troque em dados\\config.json.")
+            return 1
+        print(f"  A porta {porta} está ocupada por outro programa: usando a {livre} (fica salva).")
+        porta = cfg["porta"] = livre
+        gravar_config(cfg)
+    tela_url = f"http://127.0.0.1:{porta}/"
     if not baixar_modelo.modelo_presente(PASTA_MODELO):
         print("  Primeira vez? O modelo (~640 MB) ainda não foi baixado: clique em \"Baixar modelo\" na tela.")
     print(f"\n  STT Local {VERSAO} — Parakeet TDT 0.6B v3 no processador")

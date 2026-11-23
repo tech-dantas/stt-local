@@ -6,264 +6,331 @@
 <title>STT Local</title>
 <style>
   :root {
-    --bg: #f5f6f8; --card: #ffffff; --texto: #19212b; --suave: #5b6878; --borda: #dde3ea;
+    --bg: #f4f6f9; --card: #ffffff; --texto: #18202a; --suave: #5b6878; --borda: #dfe4eb;
+    --lateral: #111827; --lateral-texto: #cbd5e1; --lateral-ativo: #1f2937;
     --acento: #2563eb; --acento-suave: #e8f0fe; --acento-texto: #ffffff; --ok: #15803d; --ok-suave: #e7f6ec;
-    --aviso: #b45309; --ruim: #c0392b; --codigo: #eef1f5; --raio: 12px;
+    --ruim: #c0392b; --codigo: #eef1f5; --raio: 14px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #0f1318; --card: #171c23; --texto: #e7ecf2; --suave: #98a4b3; --borda: #29313c;
-      --acento: #6097f5; --acento-suave: #1b2a44; --acento-texto: #0b0f14; --ok: #4ade80; --ok-suave: #12291b;
-      --aviso: #f0a63a; --ruim: #f07167; --codigo: #1f2630; }
+    :root { --bg: #0d1117; --card: #161b22; --texto: #e6edf3; --suave: #93a1b2; --borda: #262e38;
+      --lateral: #090c11; --lateral-texto: #aab6c5; --lateral-ativo: #18202b;
+      --acento: #5b93f3; --acento-suave: #172842; --acento-texto: #0b0f14; --ok: #4ade80; --ok-suave: #11281a;
+      --ruim: #f07167; --codigo: #1d242e; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--texto); font: 15px/1.55 system-ui, "Segoe UI", sans-serif; }
-  main { max-width: 1000px; margin: 0 auto; padding: 22px 16px 48px; }
-  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  h1 { font-size: 24px; margin: 0; letter-spacing: -.3px; }
-  h2 { font-size: 17px; margin: 0 0 6px; }
-  h3 { font-size: 14px; margin: 14px 0 6px; }
+  .app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+
+  nav.lateral { background: var(--lateral); color: var(--lateral-texto); padding: 22px 14px; display: flex; flex-direction: column; gap: 4px;
+    position: sticky; top: 0; height: 100vh; }
+  .marca { display: flex; align-items: center; gap: 10px; padding: 0 10px 18px; }
+  .marca .logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2563eb, #7c3aed); display: grid; place-items: center; font-size: 19px; flex: none; }
+  .marca b { color: #fff; font-size: 17px; display: block; line-height: 1.15; } .marca span { font-size: 12px; }
+  nav.lateral a { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: var(--lateral-texto); text-decoration: none; font-weight: 500; }
+  nav.lateral a:hover { background: var(--lateral-ativo); color: #fff; }
+  nav.lateral a.ativa { background: var(--lateral-ativo); color: #fff; box-shadow: inset 3px 0 0 var(--acento); }
+  nav.lateral a .ico { width: 22px; text-align: center; font-size: 17px; }
+  nav.lateral a .selo { margin-left: auto; font-size: 11px; padding: 1px 7px; border-radius: 99px; background: #374151; color: #e5e7eb; }
+  nav.lateral a .selo.ligado { background: #16a34a; color: #fff; }
+  .lateral-rodape { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid #1f2937; font-size: 12.5px; }
+  .estado-servico { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; color: #fff; font-weight: 600; font-size: 13.5px; }
+  .ponto { width: 9px; height: 9px; border-radius: 50%; background: #6b7280; flex: none; }
+  .ponto.ok { background: #22c55e; box-shadow: 0 0 0 3px #22c55e33; } .ponto.aviso { background: #f59e0b; } .ponto.ruim { background: #ef4444; }
+  nav.lateral .lateral-rodape a { display: inline; padding: 0; color: var(--lateral-texto); text-decoration: underline; font-weight: 400; }
+  nav.lateral .lateral-rodape a:hover { background: none; color: #fff; }
+
+  main { padding: 30px 34px 50px; max-width: 1000px; width: 100%; }
+  .tela { display: none; } .tela.ativa { display: block; animation: entra .18s ease-out; }
+  @keyframes entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .titulo { margin-bottom: 20px; }
+  .titulo h1 { font-size: 25px; margin: 0 0 4px; letter-spacing: -.3px; }
+  .titulo p { margin: 0; color: var(--suave); max-width: 720px; }
+  h2 { font-size: 16.5px; margin: 0 0 6px; }
   p { margin: 6px 0; }
   .sub { color: var(--suave); font-size: 13.5px; }
-  .intro { margin: 6px 0 18px; color: var(--suave); max-width: 760px; }
-  .pilula { padding: 3px 11px; border-radius: 99px; font-size: 13px; font-weight: 600; background: var(--codigo); }
-  .pilula.ok { color: var(--ok); background: var(--ok-suave); } .pilula.aviso { color: var(--aviso); } .pilula.ruim { color: var(--ruim); }
-  .card { background: var(--card); border: 1px solid var(--borda); border-radius: var(--raio); padding: 18px; margin-bottom: 14px; }
-  .grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-  .grade .card { margin-bottom: 0; }
-  .passos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 4px 0 16px; }
-  .passo { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 10px; border: 1px solid var(--borda); background: var(--card); }
-  .passo .num { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px;
-    background: var(--codigo); color: var(--suave); }
-  .passo.feito .num { background: var(--ok); color: #fff; } .passo.atual { border-color: var(--acento); background: var(--acento-suave); }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: var(--raio); padding: 20px; margin-bottom: 16px; }
+  .grade2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .grade2 > .card { margin-bottom: 0; }
+  .grade4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+
+  .passos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .passo { display: flex; gap: 10px; align-items: flex-start; padding: 13px; border-radius: 12px; border: 1px solid var(--borda); background: var(--card); }
+  .passo .num { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; background: var(--codigo); color: var(--suave); }
+  .passo.feito .num { background: var(--ok); color: #fff; }
+  .passo.atual { border-color: var(--acento); background: var(--acento-suave); }
   .passo.atual .num { background: var(--acento); color: var(--acento-texto); }
-  .passo b { display: block; font-size: 14px; } .passo span { font-size: 12.5px; color: var(--suave); }
+  .passo b { display: block; font-size: 14px; } .passo small { font-size: 12.5px; color: var(--suave); }
+
   .destaque { border: 2px solid var(--acento); }
-  .barra { height: 10px; background: var(--codigo); border-radius: 6px; overflow: hidden; margin: 12px 0 6px; }
-  .barra i { display: block; height: 100%; width: 0; background: var(--acento); transition: width .5s; }
-  .mini .barra { height: 6px; margin: 6px 0 0; }
-  button { padding: 9px 15px; border-radius: 9px; border: 1px solid var(--borda); background: var(--card); color: var(--texto);
-    font: inherit; cursor: pointer; }
+  .barra { height: 10px; background: var(--codigo); border-radius: 6px; overflow: hidden; margin: 14px 0 6px; }
+  .barra i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #2563eb, #7c3aed); transition: width .5s; }
+  .metrica .barra { height: 6px; margin: 7px 0 0; }
+
+  button { padding: 9px 15px; border-radius: 10px; border: 1px solid var(--borda); background: var(--card); color: var(--texto); font: inherit; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--acento); }
   button.primario { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); font-weight: 600; }
   button.grande { padding: 12px 22px; font-size: 16px; }
   button.perigo { color: var(--ruim); }
   button:disabled { opacity: .5; cursor: default; }
   .gravando { background: var(--ruim) !important; border-color: var(--ruim) !important; color: #fff !important; }
   .linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
-  label.campo { display: block; font-size: 13px; color: var(--suave); margin: 12px 0 4px; }
-  select, input[type=number] { width: 100%; padding: 8px 10px; border: 1px solid var(--borda); border-radius: 8px; background: var(--bg); color: var(--texto); font: inherit; }
-  .check { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; margin-top: 10px; cursor: pointer; }
+  label.campo { display: block; font-size: 13px; color: var(--suave); margin: 14px 0 5px; font-weight: 500; }
+  select, input[type=number] { width: 100%; padding: 9px 11px; border: 1px solid var(--borda); border-radius: 9px; background: var(--bg); color: var(--texto); font: inherit; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-top: 11px; cursor: pointer; }
   .check input { margin-top: 4px; }
+  .opcao { display: flex; gap: 10px; align-items: flex-start; padding: 11px 12px; border: 1px solid var(--borda); border-radius: 10px; margin-top: 8px; cursor: pointer; }
+  .opcao:has(input:checked) { border-color: var(--acento); background: var(--acento-suave); }
+  .opcao input { margin-top: 4px; }
   .msg { font-size: 13px; color: var(--suave); min-height: 20px; margin-top: 8px; }
   .msg.ok { color: var(--ok); } .msg.ruim { color: var(--ruim); }
-  .resultado { background: var(--codigo); border-radius: 10px; padding: 12px; min-height: 56px; white-space: pre-wrap; margin-top: 12px; font-size: 15.5px; }
-  pre { background: var(--codigo); padding: 12px; border-radius: 10px; overflow-x: auto; font-size: 12.5px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; }
-  code { background: var(--codigo); padding: 1px 5px; border-radius: 5px; font-size: 13px; }
-  .chave { display: flex; align-items: center; gap: 10px; font-weight: 600; cursor: pointer; }
-  .chave input { appearance: none; width: 42px; height: 24px; border-radius: 99px; background: var(--borda); position: relative; cursor: pointer; transition: background .2s; margin: 0; }
-  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; }
-  .chave input:checked { background: var(--ok); } .chave input:checked::after { left: 21px; }
-  .tecla { display: inline-block; padding: 1px 8px; border: 1px solid var(--borda); border-bottom-width: 3px; border-radius: 6px; font-weight: 600; font-size: 13px; background: var(--card); color: var(--texto); }
-  .ditado-status { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--codigo); font-size: 14px; }
-  .ditado-status.ouvindo { background: var(--ruim); color: #fff; } .ditado-status.transcrevendo { background: var(--acento-suave); }
-  .abas { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; }
-  .abas button { padding: 6px 12px; font-size: 13.5px; }
-  .abas button.ativa { background: var(--acento); color: var(--acento-texto); border-color: var(--acento); }
-  .fluxo { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 10px 0; font-size: 13.5px; }
-  .fluxo span.bloco { padding: 7px 11px; border-radius: 9px; background: var(--codigo); }
-  .fluxo span.seta { color: var(--suave); }
-  details { margin-bottom: 14px; } details > summary { cursor: pointer; font-weight: 600; padding: 14px 18px; background: var(--card);
-    border: 1px solid var(--borda); border-radius: var(--raio); list-style: none; }
-  details > summary::-webkit-details-marker { display: none; }
-  details > summary::before { content: "▸ "; color: var(--suave); } details[open] > summary::before { content: "▾ "; }
-  details[open] > summary { border-radius: var(--raio) var(--raio) 0 0; }
-  details > .card { border-top: 0; border-radius: 0 0 var(--raio) var(--raio); }
-  .metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-  .metrica { background: var(--codigo); border-radius: 9px; padding: 10px; }
-  .metrica span { display: block; color: var(--suave); font-size: 12px; } .metrica b { font-size: 18px; font-variant-numeric: tabular-nums; }
-  ul { margin: 6px 0; padding-left: 20px; } li { margin: 3px 0; }
-  footer { margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--suave); font-size: 13px; }
-  footer a { color: var(--suave); }
+  .resultado { background: var(--codigo); border-radius: 11px; padding: 14px; min-height: 64px; white-space: pre-wrap; margin-top: 14px; font-size: 16px; }
+  pre { background: var(--codigo); padding: 14px; border-radius: 11px; overflow-x: auto; font-size: 12.8px; margin: 12px 0 0; white-space: pre-wrap; word-break: break-word; }
+  code { background: var(--codigo); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+
+  .chave { display: flex; align-items: center; gap: 12px; font-weight: 600; cursor: pointer; font-size: 15.5px; }
+  .chave input { appearance: none; width: 46px; height: 26px; border-radius: 99px; background: var(--borda); position: relative; cursor: pointer; transition: background .2s; margin: 0; flex: none; }
+  .chave input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px #0003; }
+  .chave input:checked { background: #16a34a; } .chave input:checked::after { left: 23px; }
+  .tecla { display: inline-block; padding: 1px 9px; border: 1px solid var(--borda); border-bottom-width: 3px; border-radius: 7px; font-weight: 600; font-size: 13px; background: var(--card); color: var(--texto); }
+
+  .painel-ditado { text-align: center; padding: 32px 20px; display: flex; flex-direction: column; justify-content: center; }
+  .microfone { width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 14px; display: grid; place-items: center; font-size: 42px; background: var(--codigo); transition: all .2s; }
+  .painel-ditado.pronto .microfone { background: var(--acento-suave); }
+  .painel-ditado.ouvindo .microfone { background: var(--ruim); animation: pulsa 1.1s infinite; }
+  .painel-ditado.transcrevendo .microfone { background: var(--acento); }
+  @keyframes pulsa { 0% { box-shadow: 0 0 0 0 #ef444466; } 70% { box-shadow: 0 0 0 20px #ef444400; } 100% { box-shadow: 0 0 0 0 #ef444400; } }
+  .grande-texto { font-size: 19px; font-weight: 650; }
+  .ultimo { margin-top: 16px; padding: 12px; border-radius: 11px; background: var(--codigo); text-align: left; font-size: 14px; }
+
+  .abas { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--borda); }
+  .abas button { border: 0; border-radius: 0; background: none; padding: 9px 14px; color: var(--suave); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .abas button.ativa { color: var(--acento); border-bottom-color: var(--acento); }
+  .abas button:hover { color: var(--texto); }
+
+  .info { padding: 15px; border-radius: 12px; background: var(--card); border: 1px solid var(--borda); }
+  .info .ico { font-size: 22px; } .info b { display: block; margin: 4px 0 2px; } .info span { font-size: 13px; color: var(--suave); }
+  .metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .metrica { background: var(--codigo); border-radius: 11px; padding: 12px; }
+  .metrica span { display: block; color: var(--suave); font-size: 12px; } .metrica b { font-size: 19px; font-variant-numeric: tabular-nums; }
+  .endereco { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--borda); font-size: 13.5px; }
+  .endereco:first-child { border-top: 0; }
   .oculto { display: none !important; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    nav.lateral { height: auto; flex-direction: row; flex-wrap: wrap; padding: 10px; z-index: 5; gap: 2px; }
+    .marca { padding: 2px 6px 8px; width: 100%; } .marca span { display: none; }
+    nav.lateral a { flex: 1; justify-content: center; padding: 8px 4px; font-size: 12.5px; flex-direction: column; gap: 1px; }
+    nav.lateral a.ativa { box-shadow: inset 0 -2px 0 var(--acento); }
+    nav.lateral a .selo, .lateral-rodape { display: none; }
+    main { padding: 20px 16px 40px; }
+    .passos { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>🎙️ STT Local</h1>
-    <span class="pilula" id="estado">…</span>
-  </header>
-  <p class="intro">Transforma fala em texto <b>no seu computador</b>, pelo processador, sem placa de vídeo e sem mandar nada para a internet.
-    Use para ditar em qualquer programa, ou ligue seus agentes e aplicativos nele.</p>
+<div class="app">
+  <nav class="lateral">
+    <div class="marca"><div class="logo">🎙️</div><div><b>STT Local</b><span>fala → texto, no seu PC</span></div></div>
+    <a href="#inicio" data-tela="inicio"><span class="ico">🏠</span>Início</a>
+    <a href="#ditado" data-tela="ditado"><span class="ico">⌨️</span>Ditado <span class="selo" id="selo-ditado">off</span></a>
+    <a href="#conectar" data-tela="conectar"><span class="ico">🔌</span>Conectar</a>
+    <a href="#ajustes" data-tela="ajustes"><span class="ico">⚙️</span>Ajustes</a>
+    <div class="lateral-rodape">
+      <div class="estado-servico"><span class="ponto" id="ponto"></span><span id="estado">…</span></div>
+      <div id="versao"></div>
+      <div style="margin-top:8px">Modelo Parakeet © NVIDIA (CC-BY-4.0)<br><a href="https://github.com/tech-dantas/stt-local" target="_blank" rel="noopener">github.com/tech-dantas</a></div>
+    </div>
+  </nav>
 
-  <div class="passos">
-    <div class="passo" id="p1"><div class="num">1</div><div><b>Baixar o modelo</b><span>Uma vez só, ~640 MB</span></div></div>
-    <div class="passo" id="p2"><div class="num">2</div><div><b>Testar</b><span>Grave uma fala e veja o texto</span></div></div>
-    <div class="passo" id="p3"><div class="num">3</div><div><b>Usar</b><span>Ditado em qualquer programa ou conectar agentes</span></div></div>
-  </div>
-
-  <section class="card destaque" id="card-modelo">
-    <h2>Baixar o modelo de reconhecimento de fala</h2>
-    <p class="sub">O STT Local usa o <b>Parakeet TDT 0.6B v3</b>, da NVIDIA: entende português e mais 24 línguas, com pontuação e letras maiúsculas.
-      São cerca de <b>640 MB</b>, baixados uma única vez da fonte oficial (Hugging Face). Cada arquivo é conferido; se a internet cair, continua de onde parou.</p>
-    <div id="dl-parado" class="linha"><button class="primario grande" id="dl-baixar">⬇ Baixar modelo</button></div>
-    <div id="dl-andamento" class="oculto">
-      <div class="barra"><i id="dl-barra"></i></div>
-      <div class="linha" style="margin-top:4px; justify-content: space-between">
-        <span id="dl-texto" class="sub"></span>
-        <button id="dl-cancelar">Pausar</button>
+  <main>
+    <!-- INÍCIO -->
+    <section class="tela" id="tela-inicio">
+      <div class="titulo">
+        <h1>Sua fala vira texto, aqui mesmo</h1>
+        <p>Reconhecimento de fala que roda no processador do seu computador: sem placa de vídeo, sem conta e sem mandar áudio para a internet.</p>
       </div>
-    </div>
-    <p class="msg" id="dl-msg"></p>
-  </section>
+      <div class="passos">
+        <div class="passo" id="p1"><div class="num">1</div><div><b>Baixar o modelo</b><small>Uma vez só, ~640 MB</small></div></div>
+        <div class="passo" id="p2"><div class="num">2</div><div><b>Testar</b><small>Fale e veja o texto</small></div></div>
+        <div class="passo" id="p3"><div class="num">3</div><div><b>Usar</b><small>Ditado ou conectar agentes</small></div></div>
+      </div>
 
-  <section class="card" id="card-testar">
-    <h2>Testar</h2>
-    <p class="sub">Clique em gravar, fale uma frase e clique de novo. Ou escolha um arquivo de áudio ou vídeo (áudio do WhatsApp também).</p>
-    <div class="linha">
-      <button class="primario grande" id="gravar">● Gravar</button>
-      <label><input type="file" id="arquivo" accept="audio/*,video/*,.ogg,.opus" /></label>
-    </div>
-    <div class="resultado" id="resultado">O texto aparece aqui.</div>
-    <div class="linha" style="margin-top:6px"><button id="copiar-resultado" class="oculto" data-rotulo="Copiar texto">Copiar texto</button><span class="msg" id="teste-msg" style="margin:0"></span></div>
-  </section>
+      <section class="card destaque" id="card-modelo">
+        <h2>Baixar o modelo de reconhecimento de fala</h2>
+        <p class="sub">O STT Local usa o <b>Parakeet TDT 0.6B v3</b>, da NVIDIA: entende português e mais 24 línguas, já com pontuação.
+          São cerca de <b>640 MB</b>, baixados uma única vez da fonte oficial (Hugging Face). Cada arquivo é conferido, e se a internet cair o download continua de onde parou.</p>
+        <div id="dl-parado" class="linha"><button class="primario grande" id="dl-baixar">⬇ Baixar modelo</button></div>
+        <div id="dl-andamento" class="oculto">
+          <div class="barra"><i id="dl-barra"></i></div>
+          <div class="linha" style="margin-top:4px; justify-content: space-between">
+            <span id="dl-texto" class="sub"></span><button id="dl-cancelar">Pausar</button>
+          </div>
+        </div>
+        <p class="msg" id="dl-msg"></p>
+      </section>
 
-  <div class="grade">
-    <section class="card" id="card-ditado">
-      <h2>Ditado em qualquer programa</h2>
-      <p class="sub">Clique onde você escreveria (OpenCode, Claude Code, navegador, Word, WhatsApp Web…), aperte o atalho, fale,
-        e o texto aparece ali, como se você tivesse digitado.</p>
-      <label class="chave" style="margin-top:12px"><input type="checkbox" id="dit-ativo" /> <span id="dit-ativo-txt">Ditado desligado</span></label>
-      <label class="campo" for="dit-tecla">Tecla de atalho</label>
-      <select id="dit-tecla"></select>
-      <label class="campo">Como gravar</label>
-      <label class="check"><input type="radio" name="dit-modo" value="segurar" /> <span><b>Segurar para falar:</b> grava enquanto a tecla está apertada.</span></label>
-      <label class="check"><input type="radio" name="dit-modo" value="alternar" /> <span><b>Tocar para começar e parar:</b> um toque começa, outro termina.</span></label>
-      <label class="check"><input type="checkbox" id="dit-enter" /> <span>Apertar <span class="tecla">Enter</span> sozinho no fim (envia a mensagem direto)</span></label>
-      <label class="check"><input type="checkbox" id="dit-som" /> <span>Bip ao começar e ao terminar</span></label>
-      <div class="ditado-status" id="dit-status">—</div>
-      <p class="sub" style="margin-top:8px">Programas abertos "como administrador" não aceitam o texto (proteção do Windows).</p>
+      <section class="card">
+        <h2>Testar</h2>
+        <p class="sub">Clique em gravar, fale uma frase e clique de novo. Ou escolha um arquivo de áudio ou vídeo (áudio do WhatsApp também).</p>
+        <div class="linha">
+          <button class="primario grande" id="gravar">● Gravar</button>
+          <label><input type="file" id="arquivo" accept="audio/*,video/*,.ogg,.opus" /></label>
+        </div>
+        <div class="resultado" id="resultado">O texto aparece aqui.</div>
+        <div class="linha" style="margin-top:6px"><button id="copiar-resultado" class="oculto" data-rotulo="Copiar texto">Copiar texto</button><span class="msg" id="teste-msg" style="margin:0"></span></div>
+      </section>
+
+      <div class="grade4">
+        <div class="info"><div class="ico">🔒</div><b>Privado</b><span>O áudio nunca sai do computador. Depois do download, funciona até sem internet.</span></div>
+        <div class="info"><div class="ico">⚡</div><b>Rápido e leve</b><span>Roda no processador com poucos núcleos. 7 s de fala viram texto em menos de 1 s.</span></div>
+        <div class="info"><div class="ico">🤫</div><b>Não inventa</b><span>Um detector de fala descarta silêncio e ruído antes do reconhecimento.</span></div>
+        <div class="info"><div class="ico">🧩</div><b>Fácil de integrar</b><span>Mesmo formato da API de transcrição da OpenAI, mais um MCP para agentes.</span></div>
+      </div>
     </section>
 
-    <section class="card" id="card-conectar">
-      <h2>Conectar agentes e aplicativos</h2>
-      <p class="sub">Escolha o programa e copie a configuração. Agentes que falam <b>MCP</b> ganham ferramentas de transcrição;
-        os demais usam o endereço compatível com a API da OpenAI.</p>
-      <div class="abas" id="abas">
-        <button data-cliente="hermes" class="ativa">Hermes</button>
-        <button data-cliente="opencode">OpenCode</button>
-        <button data-cliente="claude-code">Claude Code</button>
-        <button data-cliente="codex">Codex</button>
-        <button data-cliente="openai">Outros (API)</button>
+    <!-- DITADO -->
+    <section class="tela" id="tela-ditado">
+      <div class="titulo">
+        <h1>Ditado em qualquer programa</h1>
+        <p>Clique onde você escreveria (OpenCode, Claude Code, navegador, Word, WhatsApp Web…), aperte o atalho e fale. O texto aparece ali, como se você tivesse digitado.</p>
       </div>
-      <pre id="conectar-texto">…</pre>
-      <div class="linha"><button id="copiar-conectar">Copiar</button>
-        <span class="sub">MCP: <code id="url-mcp"></code></span></div>
+      <div class="grade2">
+        <section class="card painel-ditado" id="painel-ditado">
+          <div class="microfone" id="dit-icone">🎤</div>
+          <div class="grande-texto" id="dit-titulo">Ditado desligado</div>
+          <p class="sub" id="dit-dica"></p>
+          <div class="linha" style="justify-content:center; margin-top:16px">
+            <label class="chave"><input type="checkbox" id="dit-ativo" /> <span id="dit-ativo-txt">Ligar o ditado</span></label>
+          </div>
+          <div class="ultimo oculto" id="dit-ultimo"></div>
+        </section>
+        <section class="card">
+          <h2>Como você quer ditar</h2>
+          <label class="campo" for="dit-tecla">Tecla de atalho</label>
+          <select id="dit-tecla"></select>
+          <label class="campo">Modo</label>
+          <label class="opcao"><input type="radio" name="dit-modo" value="segurar" /> <span><b>Segurar para falar</b><br><span class="sub">Grava enquanto a tecla está apertada. Soltou, escreveu.</span></span></label>
+          <label class="opcao"><input type="radio" name="dit-modo" value="alternar" /> <span><b>Tocar para começar e parar</b><br><span class="sub">Um toque começa, outro termina. Bom para falas longas.</span></span></label>
+          <label class="check"><input type="checkbox" id="dit-enter" /> <span>Apertar <span class="tecla">Enter</span> sozinho no fim (envia direto)</span></label>
+          <label class="check"><input type="checkbox" id="dit-som" /> <span>Bip ao começar e ao terminar</span></label>
+          <p class="sub" style="margin-top:14px">Programas abertos “como administrador” não aceitam o texto (proteção do Windows). Atalhos como <span class="tecla">Ctrl</span>+<span class="tecla">C</span> continuam normais.</p>
+        </section>
+      </div>
     </section>
-  </div>
 
-  <div style="height:14px"></div>
-
-  <details>
-    <summary>Como funciona</summary>
-    <div class="card">
-      <div class="fluxo">
-        <span class="bloco">🎤 Áudio</span><span class="seta">→</span>
-        <span class="bloco">Detector de fala<br><span class="sub">Silero VAD</span></span><span class="seta">→</span>
-        <span class="bloco">Reconhecimento<br><span class="sub">Parakeet, no processador</span></span><span class="seta">→</span>
-        <span class="bloco">📝 Texto</span>
+    <!-- CONECTAR -->
+    <section class="tela" id="tela-conectar">
+      <div class="titulo">
+        <h1>Conectar agentes e aplicativos</h1>
+        <p>Escolha o programa e copie a configuração. Agentes que falam <b>MCP</b> ganham ferramentas de transcrição; os demais usam o endereço compatível com a API da OpenAI.</p>
       </div>
-      <ul>
-        <li><b>STT</b> (<i>speech-to-text</i>) é o que transforma fala em texto, como a legenda automática.</li>
-        <li><b>Local:</b> o áudio nunca sai do computador. Funciona sem internet, depois do download do modelo.</li>
-        <li><b>Leve:</b> roda no processador, usando só parte dos núcleos (por padrão 1/4). Uma fala de 7 s costuma virar texto em menos de 1 s.</li>
-        <li><b>Detector de fala:</b> antes do reconhecimento, só os trechos com voz seguem adiante. Silêncio, respiração e ruído não viram palavras inventadas.</li>
-        <li><b>Modelo:</b> Parakeet TDT 0.6B v3 (NVIDIA, licença CC-BY-4.0), versão compactada (int8) para CPU. Detecta o idioma sozinho.</li>
-        <li><b>Para programadores:</b> mesmo formato da API de transcrição da OpenAI. Quem já usa Whisper pela OpenAI só troca o endereço.</li>
-      </ul>
-    </div>
-  </details>
+      <section class="card">
+        <div class="abas" id="abas">
+          <button data-cliente="hermes" class="ativa">Hermes</button>
+          <button data-cliente="opencode">OpenCode</button>
+          <button data-cliente="claude-code">Claude Code</button>
+          <button data-cliente="codex">Codex</button>
+          <button data-cliente="openai">Outros (API)</button>
+        </div>
+        <pre id="conectar-texto">…</pre>
+        <div class="linha"><button class="primario" id="copiar-conectar">Copiar</button></div>
+      </section>
+      <section class="card">
+        <h2>Endereços deste serviço</h2>
+        <div id="enderecos"></div>
+        <p class="sub" id="enderecos-nota"></p>
+      </section>
+    </section>
 
-  <details>
-    <summary>Desempenho</summary>
-    <div class="card">
-      <div class="metricas">
-        <div class="metrica mini"><span>CPU do serviço</span><b id="cpu-servico">—</b><div class="barra"><i id="barra-servico"></i></div></div>
-        <div class="metrica mini"><span>CPU do computador</span><b id="cpu-sistema">—</b><div class="barra"><i id="barra-sistema"></i></div></div>
-        <div class="metrica"><span>Memória do serviço</span><b id="ram">—</b></div>
-        <div class="metrica"><span>Núcleos em uso</span><b id="nucleos-uso">—</b></div>
-        <div class="metrica"><span>Transcrições</span><b id="c-total">0</b></div>
-        <div class="metrica"><span>Áudio transcrito</span><b id="c-audio">0 s</b></div>
-        <div class="metrica"><span>Velocidade média</span><b id="c-vel">—</b></div>
-        <div class="metrica"><span>Ditados</span><b id="c-ditados">0</b></div>
+    <!-- AJUSTES -->
+    <section class="tela" id="tela-ajustes">
+      <div class="titulo">
+        <h1>Ajustes</h1>
+        <p>Desempenho e opções avançadas. O padrão já funciona bem para a maioria das pessoas.</p>
       </div>
-      <p class="sub" id="cpu-info"></p>
-      <p class="sub" id="c-notas"></p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Configuração</summary>
-    <div class="card">
-      <label class="campo" for="cfg-nucleos">Núcleos do processador</label>
-      <select id="cfg-nucleos"></select>
-      <label class="campo" for="cfg-porta">Porta</label>
-      <input id="cfg-porta" type="number" min="1024" max="65535" />
-      <label class="check"><input type="checkbox" id="cfg-rede" />
-        <span>Aceitar outros computadores da rede (Wi-Fi de casa ou VPN). Desligado, só este computador usa. Não há senha: não exponha na internet.</span></label>
-      <label class="check"><input type="checkbox" id="cfg-trava" />
-        <span>Detector de fala ligado (recomendado): silêncio e ruído voltam vazios.</span></label>
-      <label class="check"><input type="checkbox" id="cfg-auto" />
-        <span>Iniciar com o Windows, sem janela.</span></label>
-      <div class="linha"><button class="primario" id="salvar">Salvar</button></div>
-      <p class="msg" id="cfg-msg"></p>
-      <h3>Endereços</h3>
-      <div id="enderecos" class="sub"></div>
-    </div>
-  </details>
-
-  <footer>
-    <span id="rodape"></span>
-    <span>Modelo Parakeet © NVIDIA (CC-BY-4.0) · <a href="https://github.com/tech-dantas/stt-local" target="_blank" rel="noopener">github.com/tech-dantas/stt-local</a></span>
-    <button class="perigo" id="parar">Desligar o serviço</button>
-  </footer>
-</main>
+      <section class="card">
+        <h2>Desempenho agora</h2>
+        <div class="metricas">
+          <div class="metrica"><span>CPU do serviço</span><b id="cpu-servico">—</b><div class="barra"><i id="barra-servico"></i></div></div>
+          <div class="metrica"><span>CPU do computador</span><b id="cpu-sistema">—</b><div class="barra"><i id="barra-sistema"></i></div></div>
+          <div class="metrica"><span>Memória do serviço</span><b id="ram">—</b></div>
+          <div class="metrica"><span>Núcleos em uso</span><b id="nucleos-uso">—</b></div>
+          <div class="metrica"><span>Transcrições</span><b id="c-total">0</b></div>
+          <div class="metrica"><span>Áudio transcrito</span><b id="c-audio">0 s</b></div>
+          <div class="metrica"><span>Velocidade média</span><b id="c-vel">—</b></div>
+          <div class="metrica"><span>Ditados</span><b id="c-ditados">0</b></div>
+        </div>
+        <p class="sub" id="cpu-info"></p>
+        <p class="sub" id="c-notas"></p>
+      </section>
+      <section class="card">
+        <h2>Configuração</h2>
+        <div class="grade2" style="gap:0 20px; margin:0">
+          <div><label class="campo" for="cfg-nucleos">Núcleos do processador</label><select id="cfg-nucleos"></select></div>
+          <div><label class="campo" for="cfg-porta">Porta</label><input id="cfg-porta" type="number" min="1024" max="65535" /></div>
+        </div>
+        <label class="check"><input type="checkbox" id="cfg-trava" /><span><b>Detector de fala</b> (recomendado): silêncio e ruído voltam vazios.</span></label>
+        <label class="check"><input type="checkbox" id="cfg-auto" /><span><b>Iniciar com o Windows</b>, sem janela. O ditado fica sempre à mão.</span></label>
+        <label class="check"><input type="checkbox" id="cfg-rede" /><span><b>Aceitar outros computadores</b> da rede (Wi-Fi de casa ou VPN). Não há senha: não exponha na internet.</span></label>
+        <div class="linha"><button class="primario" id="salvar">Salvar</button></div>
+        <p class="msg" id="cfg-msg"></p>
+      </section>
+      <section class="card">
+        <h2>Desligar</h2>
+        <p class="sub">Desliga o serviço e o ditado. Para abrir de novo, use o <code>INICIAR.bat</code>.</p>
+        <div class="linha"><button class="perigo" id="parar">Desligar o serviço</button></div>
+      </section>
+    </section>
+  </main>
+</div>
 
 <script>
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-let ultimo = null, editando = false, editandoDitado = false, cliente = "hermes", testou = localStorage.getItem("stt-testou") === "1";
+let ultimo = null, editando = false, editandoDitado = false, cliente = "hermes", gravador = null;
+let testou = localStorage.getItem("stt-testou") === "1";
 
 function msg(sel, texto, tipo = "") { const el = $(sel); el.textContent = texto; el.className = `msg ${tipo}`; }
 function fmtSeg(s) { if (s < 60) return `${s.toFixed(1)} s`; const m = Math.floor(s / 60); return m < 60 ? `${m} min ${Math.round(s % 60)} s` : `${(s / 3600).toFixed(1)} h`; }
 async function api(caminho, corpo) {
   const r = await fetch(caminho, corpo === undefined ? { cache: "no-store" } :
     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-  const tipo = r.headers.get("content-type") || "";
-  const dados = tipo.includes("json") ? await r.json() : await r.text();
+  const dados = (r.headers.get("content-type") || "").includes("json") ? await r.json() : await r.text();
   if (!r.ok) throw new Error(dados.detail || r.statusText);
   return dados;
 }
 async function copiar(texto, botao) {
-  try { await navigator.clipboard.writeText(texto); botao.textContent = "Copiado ✓"; }
-  catch { botao.textContent = "Selecione e copie"; }
+  try { await navigator.clipboard.writeText(texto); botao.textContent = "Copiado ✓"; } catch { botao.textContent = "Selecione e copie"; }
   setTimeout(() => (botao.textContent = botao.dataset.rotulo || "Copiar"), 1600);
 }
 
-const NOMES_ESTADO = { "no ar": "pronto", "sem modelo": "falta o modelo", "baixando": "baixando o modelo", "carregando": "carregando…", "erro": "erro" };
+function abrirTela(nome) {
+  if (!document.getElementById(`tela-${nome}`)) nome = "inicio";
+  $$(".tela").forEach((t) => t.classList.toggle("ativa", t.id === `tela-${nome}`));
+  $$("nav.lateral a[data-tela]").forEach((a) => a.classList.toggle("ativa", a.dataset.tela === nome));
+  if (nome === "conectar") mostrarConectar();
+  window.scrollTo(0, 0);
+}
+window.addEventListener("hashchange", () => abrirTela(location.hash.slice(1)));
+
+const NOMES = { "no ar": "Pronto", "sem modelo": "Falta o modelo", "baixando": "Baixando o modelo", "carregando": "Carregando…", "erro": "Erro" };
 
 function desenhar(st) {
   ultimo = st;
   const pronto = st.estado === "no ar";
-  const est = $("#estado");
-  est.textContent = NOMES_ESTADO[st.estado] || st.estado;
-  est.className = `pilula ${pronto ? "ok" : st.estado === "erro" ? "ruim" : "aviso"}`;
+  $("#estado").textContent = NOMES[st.estado] || st.estado;
+  $("#ponto").className = `ponto ${pronto ? "ok" : st.estado === "erro" ? "ruim" : "aviso"}`;
+  $("#versao").textContent = `Versão ${st.versao}`;
 
+  // Início
   const temModelo = !["sem modelo", "baixando"].includes(st.estado);
   $("#p1").className = "passo " + (temModelo ? "feito" : "atual");
   $("#p2").className = "passo " + (!temModelo ? "" : testou ? "feito" : "atual");
   $("#p3").className = "passo " + (temModelo && testou ? "atual" : "");
-
+  $("#p1 .num").textContent = temModelo ? "✓" : "1";
+  $("#p2 .num").textContent = temModelo && testou ? "✓" : "2";
   const d = st.download;
   const baixando = ["baixando", "conferindo"].includes(d.estado) || st.estado === "baixando";
   $("#card-modelo").classList.toggle("oculto", temModelo && !baixando && st.estado !== "erro");
@@ -272,22 +339,19 @@ function desenhar(st) {
   if (baixando) {
     $("#dl-barra").style.width = `${d.porcento}%`;
     const resto = d.restante_s != null ? ` · faltam ~${d.restante_s < 60 ? d.restante_s + " s" : Math.ceil(d.restante_s / 60) + " min"}` : "";
-    $("#dl-texto").textContent = d.estado === "conferindo" ? `Conferindo ${d.arquivo}…` :
+    $("#dl-texto").textContent = d.estado === "conferindo" ? `Conferindo ${d.arquivo}…` : d.baixado_mb < 1 ? "Conectando ao Hugging Face…" :
       `${d.porcento.toFixed(0)}% · ${d.baixado_mb.toFixed(0)} de ${d.total_mb.toFixed(0)} MB · ${d.velocidade_mbs.toFixed(1)} MB/s${resto}`;
     msg("#dl-msg", "");
-  } else if (d.estado === "erro") {
-    msg("#dl-msg", d.erro, "ruim"); $("#dl-baixar").textContent = "⬇ Tentar de novo";
-  } else if (d.estado === "cancelado") {
-    msg("#dl-msg", `Pausado em ${d.porcento.toFixed(0)}%. Clique para continuar de onde parou.`); $("#dl-baixar").textContent = "⬇ Continuar download";
-  }
+  } else if (d.estado === "erro") { msg("#dl-msg", d.erro, "ruim"); $("#dl-baixar").textContent = "⬇ Tentar de novo"; }
+  else if (d.estado === "cancelado") { msg("#dl-msg", `Pausado em ${d.porcento.toFixed(0)}%. Clique para continuar de onde parou.`); $("#dl-baixar").textContent = "⬇ Continuar download"; }
   if (st.erro) msg("#dl-msg", `O modelo não abriu: ${st.erro}`, "ruim");
-
   $("#gravar").disabled = !pronto && !gravador;
   $("#arquivo").disabled = !pronto;
   const tm = $("#teste-msg").textContent;
   if (!pronto && !gravador) msg("#teste-msg", temModelo ? "Carregando o modelo…" : "Baixe o modelo primeiro (passo 1).");
   else if (tm.startsWith("Baixe") || tm.startsWith("Carregando")) msg("#teste-msg", "");
 
+  // Ditado
   const dt = st.ditado;
   if (!editandoDitado) {
     $("#dit-tecla").innerHTML = Object.entries(dt.teclas).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join("");
@@ -297,25 +361,37 @@ function desenhar(st) {
     $("#dit-enter").checked = dt.config.enter;
     $("#dit-som").checked = dt.config.som;
   }
-  $("#dit-ativo-txt").textContent = dt.config.ativo ? "Ditado ligado" : "Ditado desligado";
+  const selo = $("#selo-ditado");
+  selo.textContent = dt.config.ativo ? "on" : "off"; selo.classList.toggle("ligado", dt.config.ativo);
+  $("#dit-ativo-txt").textContent = dt.config.ativo ? "Ditado ligado" : "Ligar o ditado";
   const tecla = `<span class="tecla">${esc(dt.teclas[dt.config.tecla])}</span>`;
   const comoUsar = dt.config.modo === "segurar" ? `Segure ${tecla}, fale e solte.` : `Toque ${tecla} para começar e de novo para terminar.`;
-  const caixa = $("#dit-status");
-  caixa.className = "ditado-status " + dt.estado;
-  let html = {
-    desligado: "Ligue o ditado para usar o atalho.",
-    pronto: `Pronto. ${comoUsar}`,
-    ouvindo: "🔴 Ouvindo… pode falar.",
-    transcrevendo: "✍️ Transcrevendo…",
-    erro: `⚠️ ${esc(dt.erro || "erro")}`,
-  }[dt.estado] || esc(dt.estado);
-  if (!pronto && dt.config.ativo) html = "O ditado funciona assim que o modelo estiver pronto.";
-  if (dt.ultimo && dt.ultimo.texto && dt.estado === "pronto") html += `<br><span class="sub">Último: “${esc(dt.ultimo.texto.slice(0, 140))}” (${dt.ultimo.audio_s} s de fala, ${dt.ultimo.tempo_s} s para escrever)</span>`;
-  else if (dt.erro && dt.estado === "pronto") html += `<br><span class="sub" style="color:var(--ruim)">${esc(dt.erro)}</span>`;
-  caixa.innerHTML = html;
+  let titulo, dica, icone = "🎤", classe = dt.estado;
+  if (!dt.config.ativo) { titulo = "Ditado desligado"; dica = "Ligue para usar o atalho em qualquer programa."; classe = "desligado"; }
+  else if (!pronto) { titulo = "Esperando o modelo"; dica = "O ditado funciona assim que o modelo estiver pronto (tela Início)."; classe = "desligado"; }
+  else if (dt.estado === "ouvindo") { titulo = "Ouvindo…"; dica = "Pode falar."; icone = "🔴"; }
+  else if (dt.estado === "transcrevendo") { titulo = "Escrevendo…"; dica = "O texto já vai aparecer onde está o cursor."; icone = "✍️"; }
+  else if (dt.estado === "erro") { titulo = "Algo deu errado"; dica = esc(dt.erro || ""); icone = "⚠️"; }
+  else { titulo = "Pronto para ditar"; dica = comoUsar; }
+  $("#painel-ditado").className = `card painel-ditado ${classe}`;
+  $("#dit-icone").textContent = icone;
+  $("#dit-titulo").textContent = titulo;
+  $("#dit-dica").innerHTML = dica;
+  const ult = $("#dit-ultimo");
+  if (dt.ultimo && dt.ultimo.texto) {
+    ult.classList.remove("oculto");
+    ult.innerHTML = `<span class="sub">Último ditado · ${dt.ultimo.audio_s} s de fala, escrito em ${dt.ultimo.tempo_s} s</span><br>“${esc(dt.ultimo.texto.slice(0, 220))}”`;
+  } else if (dt.erro && dt.estado !== "erro") { ult.classList.remove("oculto"); ult.innerHTML = `<span style="color:var(--ruim)">${esc(dt.erro)}</span>`; }
+  else ult.classList.add("oculto");
 
-  $("#url-mcp").textContent = `http://127.0.0.1:${st.config.porta}/mcp`;
+  // Conectar
+  const porta = st.config.porta;
+  const linhas = [["Transcrição (API da OpenAI)", `http://127.0.0.1:${porta}/v1`], ["MCP (agentes)", `http://127.0.0.1:${porta}/mcp`], ["Esta tela", `http://127.0.0.1:${porta}/`]];
+  for (const e of st.enderecos) linhas.push([`De outro computador (${e.tipo})`, `http://${e.ip}:${porta}/v1`]);
+  $("#enderecos").innerHTML = linhas.map(([a, b]) => `<div class="endereco"><span>${esc(a)}<br><code>${esc(b)}</code></span><button data-copiar="${esc(b)}">Copiar</button></div>`).join("");
+  $("#enderecos-nota").textContent = st.config.rede ? "" : "Só este computador acessa. Para liberar outros, marque “Aceitar outros computadores” em Ajustes.";
 
+  // Ajustes
   const u = st.uso, n = st.nucleos, c = st.contadores;
   $("#cpu-servico").textContent = `${u.cpu_servico.toFixed(0)}%`;
   $("#cpu-sistema").textContent = `${u.cpu_sistema.toFixed(0)}%`;
@@ -326,14 +402,13 @@ function desenhar(st) {
   $("#cpu-info").textContent = `Processador com ${n.fisicos} núcleos físicos (${n.logicos} lógicos). No automático usa ${n.automatico}. A CPU do serviço só sobe enquanto transcreve.`;
   $("#c-total").textContent = c.transcricoes;
   $("#c-audio").textContent = fmtSeg(c.audio_s);
-  $("#c-vel").textContent = c.velocidade_media ? `${c.velocidade_media}× mais rápido que a fala` : "—";
+  $("#c-vel").textContent = c.velocidade_media ? `${c.velocidade_media}× a fala` : "—";
   $("#c-ditados").textContent = dt.total;
   const notas = [];
   if (c.sem_fala) notas.push(`${c.sem_fala} áudio(s) sem fala devolvidos vazios.`);
   if (c.erros) notas.push(`${c.erros} pedido(s) com erro.`);
   if (!st.trava_silencio.disponivel) notas.push("Detector de fala indisponível: falta modelo\\silero_vad_v6.onnx.");
   $("#c-notas").textContent = notas.join(" ");
-
   if (!editando) {
     const sel = $("#cfg-nucleos"), max = Math.max(n.logicos, 1);
     const op = [`<option value="auto">Automático (${n.automatico})</option>`];
@@ -345,19 +420,13 @@ function desenhar(st) {
     $("#cfg-trava").checked = st.config.trava_silencio;
     $("#cfg-trava").disabled = !st.trava_silencio.disponivel;
   }
-  const porta = st.config.porta;
-  const linhas = [["Transcrição (API OpenAI)", `http://127.0.0.1:${porta}/v1/audio/transcriptions`], ["MCP", `http://127.0.0.1:${porta}/mcp`],
-    ["Saúde", `http://127.0.0.1:${porta}/health`]];
-  for (const e of st.enderecos) linhas.push([`De outro computador (${e.tipo})`, `http://${e.ip}:${porta}/v1`]);
-  $("#enderecos").innerHTML = linhas.map(([a, b]) => `${esc(a)}: <code>${esc(b)}</code>`).join("<br>") +
-    (st.config.rede ? "" : "<br>Só este computador acessa (marque “Aceitar outros computadores” para liberar).");
-  $("#rodape").textContent = `STT Local ${st.versao}`;
 }
 
 async function atualizar() {
   try { desenhar(await api("/api/status")); }
-  catch { $("#estado").textContent = "fora do ar"; $("#estado").className = "pilula ruim"; }
+  catch { $("#estado").textContent = "Fora do ar"; $("#ponto").className = "ponto ruim"; }
 }
+document.addEventListener("click", (e) => { const t = e.target.dataset?.copiar; if (t) copiar(t, e.target); });
 
 $("#dl-baixar").addEventListener("click", async () => {
   $("#dl-baixar").disabled = true;
@@ -381,16 +450,11 @@ async function transcrever(blob, nome) {
     $("#copiar-resultado").classList.toggle("oculto", !texto);
     msg("#teste-msg", `${corpo.duration.toFixed(1)} s de áudio → texto em ${corpo.elapsed.toFixed(2)} s`, "ok");
     if (texto && !testou) { testou = true; localStorage.setItem("stt-testou", "1"); }
-  } catch (erro) {
-    $("#resultado").textContent = "—";
-    msg("#teste-msg", erro.message, "ruim");
-  }
+  } catch (erro) { $("#resultado").textContent = "—"; msg("#teste-msg", erro.message, "ruim"); }
   atualizar();
 }
 $("#arquivo").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) transcrever(f, f.name); });
 $("#copiar-resultado").addEventListener("click", (e) => copiar($("#resultado").textContent, e.target));
-
-let gravador = null;
 $("#gravar").addEventListener("click", async () => {
   const botao = $("#gravar");
   if (gravador) { gravador.stop(); return; }
@@ -415,7 +479,7 @@ $("#gravar").addEventListener("click", async () => {
 });
 
 async function salvarDitado(mudanca) {
-  try { await api("/api/ditado", mudanca); } catch (e) { $("#dit-status").textContent = `⚠️ ${e.message}`; }
+  try { await api("/api/ditado", mudanca); } catch (e) { $("#dit-dica").textContent = `⚠️ ${e.message}`; }
   editandoDitado = false; atualizar();
 }
 $("#dit-ativo").addEventListener("change", (e) => salvarDitado({ ativo: e.target.checked }));
@@ -444,26 +508,25 @@ $("#salvar").addEventListener("click", async () => {
     editando = false;
     if (corpo.reiniciando) {
       msg("#cfg-msg", `Reiniciando na porta ${porta}…`, "ok");
-      const destino = `http://127.0.0.1:${porta}/`;
       for (let i = 0; i < 40; i++) {
         await new Promise((ok) => setTimeout(ok, 500));
-        try { await fetch(`${destino}health`, { mode: "no-cors" }); location.href = destino; return; } catch {}
+        try { await fetch(`http://127.0.0.1:${porta}/health`, { mode: "no-cors" }); location.href = `http://127.0.0.1:${porta}/#ajustes`; return; } catch {}
       }
-      msg("#cfg-msg", `Não voltou em 20 s. Abra ${destino} ou rode o INICIAR.bat.`, "ruim");
+      msg("#cfg-msg", `Não voltou em 20 s. Abra http://127.0.0.1:${porta}/ ou rode o INICIAR.bat.`, "ruim");
     } else { msg("#cfg-msg", "Salvo.", "ok"); await atualizar(); }
   } catch (erro) { msg("#cfg-msg", erro.message, "ruim"); }
   finally { botao.disabled = false; }
 });
-
 $("#parar").addEventListener("click", async () => {
   if (!confirm("Desligar o STT Local? O ditado e quem usa o endereço ficam sem transcrição até abrir de novo.")) return;
   await fetch("/api/parar", { method: "POST" }).catch(() => {});
-  $("#estado").textContent = "desligado"; $("#estado").className = "pilula ruim";
+  $("#estado").textContent = "Desligado"; $("#ponto").className = "ponto ruim";
 });
 
+abrirTela(location.hash.slice(1) || "inicio");
 atualizar();
-mostrarConectar();
 setInterval(() => { if (document.visibilityState === "visible") atualizar(); }, 1000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") atualizar(); });
 </script>
 </body>
 </html>
