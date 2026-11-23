@@ -1,4 +1,4 @@
-"""STT Portátil: transcrição de áudio (Parakeet TDT 0.6B v3) no processador, numa porta só.
+"""STT Local: transcrição de áudio (Parakeet TDT 0.6B v3) no processador, numa porta só.
 
     INICIAR.bat            abre o serviço e a tela no navegador
     INICIAR_OCULTO.cmd     o mesmo, sem janela (é o que o "Iniciar com o Windows" usa)
@@ -64,7 +64,7 @@ CONFIG = DADOS / "config.json"
 PASTA_MODELO = RAIZ / "modelo" / "parakeet-tdt-0.6b-v3-int8"
 MODELO_ID = "parakeet-tdt-0.6b-v3"
 SILERO = RAIZ / "modelo" / "silero_vad_v6.onnx"
-STARTUP_VBS = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "STT_Portatil.vbs"
+STARTUP_VBS = Path(os.environ.get("APPDATA", "")) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup" / "STT_Local.vbs"
 
 SR = 16000
 EXTENSOES = {".wav", ".mp3", ".m4a", ".ogg", ".oga", ".opus", ".flac", ".webm", ".mp4", ".mkv", ".aac", ".wma"}
@@ -590,7 +590,7 @@ def autostart(pedido: PedidoAutostart):
         cmd = RAIZ / "INICIAR_OCULTO.cmd"
         STARTUP_VBS.parent.mkdir(parents=True, exist_ok=True)
         STARTUP_VBS.write_text(
-            "' STT Portatil no logon, sem janela. Para desligar, desmarque na tela ou apague este arquivo.\r\n"
+            "' STT Local no logon, sem janela. Para desligar, desmarque na tela ou apague este arquivo.\r\n"
             # Em VBScript "" dentro da string vira uma aspa: o resultado e  cmd.exe /d /c "C:\...\INICIAR_OCULTO.cmd"
             'CreateObject("WScript.Shell").Run "cmd.exe /d /c ""' + str(cmd) + '""", 0, False\r\n',
             encoding="ascii", errors="replace")  # VBScript le ANSI; caminho com acento viraria "?"
@@ -677,7 +677,7 @@ def main() -> int:
     tela_url = f"http://127.0.0.1:{porta}/"
     abrir = "--abrir" in sys.argv
     if porta_ocupada(porta):
-        print(f"  A porta {porta} já está em uso (o STT Portátil já está aberto?). Tela: {tela_url}")
+        print(f"  A porta {porta} já está em uso (o STT Local já está aberto?). Tela: {tela_url}")
         if abrir:
             webbrowser.open(tela_url)
         return 0

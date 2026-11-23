@@ -1,5 +1,5 @@
 @echo off
-rem STT Portatil sem janela. Usado pelo "Iniciar com o Windows" da tela (Startup\STT_Portatil.vbs).
+rem STT Local sem janela. Usado pelo "Iniciar com o Windows" da tela (Startup\STT_Local.vbs).
 rem Saida em dados\logs\stt.log. Para desligar: botao "Desligar o servico" na tela, ou PARAR.bat.
 setlocal
 cd /d "%~dp0"

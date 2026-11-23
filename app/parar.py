@@ -1,4 +1,4 @@
-"""Desliga o STT Portátil que estiver rodando (usado pelo PARAR.bat)."""
+"""Desliga o STT Local que estiver rodando (usado pelo PARAR.bat)."""
 
 import json
 import sys
@@ -12,7 +12,7 @@ except (OSError, ValueError):
     porta = 8036
 try:
     urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{porta}/api/parar", data=b"", method="POST"), timeout=5)
-    print(f"  STT Portátil (porta {porta}) desligado.")
+    print(f"  STT Local (porta {porta}) desligado.")
 except OSError:
     print(f"  Nada rodando na porta {porta}.")
     sys.exit(0)

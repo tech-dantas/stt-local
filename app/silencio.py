@@ -14,8 +14,7 @@ Como funciona:
 4. O silencio longo entre falas fica de fora, entao tambem nao vira texto.
 
 Custo: ~1 ms por segundo de audio num nucleo; o arquivo do modelo tem 1,2 MB.
-Arquivo igual no hub (services/parakeet) e no STT Portatil (app/). O .onnx fica em
-models/ (hub) e modelo/ (portatil), com o do faster-whisper como reserva no hub.
+O .onnx fica em modelo/silero_vad_v6.onnx (licença MIT).
 """
 
 from __future__ import annotations
