@@ -28,6 +28,7 @@ Na tela, abra **Ditado** e ligue. Depois:
 | **Segurar para falar** (padrão) | Segure **Ctrl direito**, fale e solte. |
 | **Tocar para começar e parar** | Um toque começa, outro termina. Bom para falas longas. |
 
+- Uma **onda de áudio flutuante**, estilo rádio, aparece na parte de baixo da tela: barras que acompanham a sua voz enquanto grava, onda azul enquanto escreve e ✓ quando termina. Ela nunca pega o foco do programa onde você está.
 - O texto é digitado onde o cursor está, com acentos, sem mexer na sua área de transferência.
 - Opcional: **Enter automático** no fim, para enviar a mensagem sozinho.
 - Atalhos como Ctrl+C continuam normais; um toque acidental curto é ignorado.

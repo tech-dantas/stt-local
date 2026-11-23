@@ -639,6 +639,7 @@ class PedidoDitado(BaseModel):
     modo: str | None = None
     enter: bool | None = None
     som: bool | None = None
+    indicador: bool | None = None
 
 
 @app.post("/api/ditado")

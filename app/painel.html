@@ -213,6 +213,7 @@
           <label class="opcao"><input type="radio" name="dit-modo" value="segurar" /> <span><b>Segurar para falar</b><br><span class="sub">Grava enquanto a tecla está apertada. Soltou, escreveu.</span></span></label>
           <label class="opcao"><input type="radio" name="dit-modo" value="alternar" /> <span><b>Tocar para começar e parar</b><br><span class="sub">Um toque começa, outro termina. Bom para falas longas.</span></span></label>
           <label class="check"><input type="checkbox" id="dit-enter" /> <span>Apertar <span class="tecla">Enter</span> sozinho no fim (envia direto)</span></label>
+          <label class="check"><input type="checkbox" id="dit-indicador" /> <span>Mostrar a onda de áudio na tela enquanto grava e escreve</span></label>
           <label class="check"><input type="checkbox" id="dit-som" /> <span>Bip ao começar e ao terminar</span></label>
           <p class="sub" style="margin-top:14px">Programas abertos “como administrador” não aceitam o texto (proteção do Windows). Atalhos como <span class="tecla">Ctrl</span>+<span class="tecla">C</span> continuam normais.</p>
         </section>
@@ -360,6 +361,7 @@ function desenhar(st) {
     $$("input[name=dit-modo]").forEach((r) => (r.checked = r.value === dt.config.modo));
     $("#dit-enter").checked = dt.config.enter;
     $("#dit-som").checked = dt.config.som;
+    $("#dit-indicador").checked = dt.config.indicador !== false;
   }
   const selo = $("#selo-ditado");
   selo.textContent = dt.config.ativo ? "on" : "off"; selo.classList.toggle("ligado", dt.config.ativo);
@@ -489,6 +491,7 @@ $("#dit-tecla").addEventListener("change", (e) => salvarDitado({ tecla: e.target
 $$("input[name=dit-modo]").forEach((r) => r.addEventListener("change", (e) => salvarDitado({ modo: e.target.value })));
 $("#dit-enter").addEventListener("change", (e) => salvarDitado({ enter: e.target.checked }));
 $("#dit-som").addEventListener("change", (e) => salvarDitado({ som: e.target.checked }));
+$("#dit-indicador").addEventListener("change", (e) => salvarDitado({ indicador: e.target.checked }));
 
 async function mostrarConectar() {
   $$("#abas button").forEach((b) => b.classList.toggle("ativa", b.dataset.cliente === cliente));

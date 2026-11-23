@@ -38,7 +38,7 @@ TECLAS: dict[str, tuple[int, str]] = {
     "pause": (0x13, "Pause/Break"),
     "scroll_lock": (0x91, "Scroll Lock"),
 }
-PADRAO = {"ativo": False, "tecla": "ctrl_direito", "modo": "segurar", "enter": False, "som": True}
+PADRAO = {"ativo": False, "tecla": "ctrl_direito", "modo": "segurar", "enter": False, "som": True, "indicador": True}
 
 _user32 = ctypes.WinDLL("user32", use_last_error=True)
 _user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
@@ -136,6 +136,20 @@ class Ditado:
         self._partes: list[np.ndarray] = []
         self._stream: Any = None
         self._inicio = 0.0
+        self._indicador: Any = None
+
+    def _ind(self) -> Any:
+        """Indicador flutuante (criado na primeira vez; desligável em Ditado)."""
+        if self._indicador is None:
+            try:
+                import indicador
+                self._indicador = indicador.Indicador()
+            except Exception as exc:  # noqa: BLE001
+                log.warning("Indicador visual indisponível: %s", exc)
+                self._indicador = False
+        if self._indicador:
+            self._indicador.ligado = bool(self.cfg.get("indicador", True))
+        return self._indicador or None
 
     def aplicar(self, cfg: dict[str, Any]) -> None:
         self.cfg = {**PADRAO, **{k: v for k, v in cfg.items() if k in PADRAO}}
@@ -158,13 +172,20 @@ class Ditado:
         import sounddevice as sd
         self._partes = []
 
-        def chegou(dados, _frames, _tempo, _status):
-            self._partes.append(dados[:, 0].copy())
+        ind = self._ind()
 
-        self._stream = sd.InputStream(samplerate=SR, channels=1, dtype="float32", callback=chegou, blocksize=1600)
+        def chegou(dados, _frames, _tempo, _status):
+            bloco = dados[:, 0].copy()
+            self._partes.append(bloco)
+            if ind:
+                ind.nivel(float(np.sqrt(np.mean(bloco * bloco))))
+
+        self._stream = sd.InputStream(samplerate=SR, channels=1, dtype="float32", callback=chegou, blocksize=800)
         self._stream.start()
         self._inicio = time.time()
         self.estado = "ouvindo"
+        if ind:
+            ind.ouvindo()
         _bip(self.cfg["som"], 880, 70)
 
     def _terminar(self, descartar: bool = False) -> None:
@@ -175,9 +196,14 @@ class Ditado:
         stream.close()
         duracao = time.time() - self._inicio
         audio = np.concatenate(self._partes) if self._partes else np.zeros(0, dtype="float32")
+        ind = self._ind()
         if descartar or duracao < MIN_S or len(audio) < SR * MIN_S:
             self.estado = "pronto"
+            if ind:
+                ind.esconder()
             return
+        if ind:
+            ind.escrevendo()
         _bip(self.cfg["som"], 600, 60)
         self.estado = "transcrevendo"
         enter = bool(self.cfg["enter"])
@@ -190,12 +216,16 @@ class Ditado:
             if texto:
                 digitar(texto, enter=enter)
                 self.total += 1
+            if self._ind():
+                self._ind().pronto(bool(texto))
             self.ultimo = {"texto": texto, "audio_s": round(len(audio) / SR, 1), "tempo_s": round(time.time() - t0, 2),
                            "quando": time.time()}
             self.erro = None
         except Exception as exc:  # noqa: BLE001
             self.erro = str(getattr(exc, "detail", None) or exc)
             log.warning("Ditado: %s", self.erro)
+            if self._ind():
+                self._ind().erro()
         finally:
             if self.estado == "transcrevendo":
                 self.estado = "pronto" if self.cfg["ativo"] else "desligado"
