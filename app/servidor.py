@@ -52,6 +52,7 @@ from pydantic import BaseModel  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import baixar_modelo  # noqa: E402
+import ditado  # noqa: E402
 import mcp_stt  # noqa: E402
 import silencio  # noqa: E402
 
@@ -82,7 +83,7 @@ log = logging.getLogger("stt")
 
 # ── Configuração ──────────────────────────────────────────
 
-PADRAO = {"porta": 8036, "rede": False, "nucleos": "auto", "trava_silencio": True}
+PADRAO = {"porta": 8036, "rede": False, "nucleos": "auto", "trava_silencio": True, "ditado": dict(ditado.PADRAO)}
 
 
 def ler_config() -> dict[str, Any]:
@@ -97,6 +98,8 @@ def ler_config() -> dict[str, Any]:
         cfg["porta"] = PADRAO["porta"]
     cfg["rede"] = bool(cfg["rede"])
     cfg["trava_silencio"] = bool(cfg["trava_silencio"])
+    dit = cfg["ditado"] if isinstance(cfg["ditado"], dict) else {}
+    cfg["ditado"] = {**ditado.PADRAO, **{k: v for k, v in dit.items() if k in ditado.PADRAO}}
     if cfg["nucleos"] != "auto":
         try:
             cfg["nucleos"] = max(1, int(cfg["nucleos"]))
@@ -148,6 +151,7 @@ class Estado:
 
 E = Estado()
 DOWNLOAD = baixar_modelo.Download()
+DITADO = ditado.Ditado(lambda wav: _rodar(wav, "json", None, False)["text"])
 PROC = psutil.Process()
 
 
@@ -329,6 +333,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
                 E.detector = silencio.DetectorDeFala(SILERO)
             except Exception:  # noqa: BLE001
                 log.exception("Trava de silêncio indisponível (%s): seguindo sem ela.", SILERO)
+            DITADO.aplicar(cfg["ditado"])
             if baixar_modelo.modelo_presente(PASTA_MODELO):
                 carregar_modelo(nucleos_da_config(cfg))
             else:
@@ -343,7 +348,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-app = FastAPI(title="STT Portátil", version=VERSAO, lifespan=lifespan)
+app = FastAPI(title="STT Local", version=VERSAO, lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -510,6 +515,7 @@ def status():
         "estado": estado_servico(),
         "erro": E.erro_carga,
         "download": DOWNLOAD.resumo(),
+        "ditado": DITADO.resumo(),
         "config": cfg,
         "nucleos": {"em_uso": E.nucleos, "automatico": nucleos_automaticos(fisicos), "fisicos": fisicos, "logicos": logicos},
         "uso": {"cpu_servico": round(E.cpu_processo, 1), "cpu_sistema": round(E.cpu_sistema, 1),
@@ -605,6 +611,11 @@ def _modelo_baixado() -> None:
         E.carregando = False
 
 
+@app.get("/api/conectar")
+def conectar(cliente: str = "openai"):
+    return PlainTextResponse(mcp_stt.instrucoes(cliente, ler_config()["porta"]))
+
+
 @app.post("/api/modelo/baixar")
 def modelo_baixar():
     if E.modelo is not None or baixar_modelo.modelo_presente(PASTA_MODELO):
@@ -617,6 +628,30 @@ def modelo_baixar():
 def modelo_cancelar():
     DOWNLOAD.cancelar()
     return {"ok": True}
+
+
+class PedidoDitado(BaseModel):
+    ativo: bool | None = None
+    tecla: str | None = None
+    modo: str | None = None
+    enter: bool | None = None
+    som: bool | None = None
+
+
+@app.post("/api/ditado")
+def mudar_ditado(pedido: PedidoDitado):
+    cfg = ler_config()
+    novo = dict(cfg["ditado"])
+    for campo, valor in pedido.model_dump(exclude_none=True).items():
+        novo[campo] = valor
+    if novo["tecla"] not in ditado.TECLAS:
+        raise HTTPException(400, f"Tecla inválida. Opções: {', '.join(ditado.TECLAS)}")
+    if novo["modo"] not in ("segurar", "alternar"):
+        raise HTTPException(400, "Modo: 'segurar' ou 'alternar'.")
+    cfg["ditado"] = novo
+    gravar_config(cfg)
+    DITADO.aplicar(novo)
+    return DITADO.resumo()
 
 
 @app.post("/api/parar")
@@ -648,7 +683,7 @@ def main() -> int:
         return 0
     if not baixar_modelo.modelo_presente(PASTA_MODELO):
         print("  Primeira vez? O modelo (~640 MB) ainda não foi baixado: clique em \"Baixar modelo\" na tela.")
-    print(f"\n  STT Portátil {VERSAO} — Parakeet TDT 0.6B v3 no processador")
+    print(f"\n  STT Local {VERSAO} — Parakeet TDT 0.6B v3 no processador")
     print(f"  Tela:      {tela_url}")
     print(f"  Endpoint:  http://127.0.0.1:{porta}/v1/audio/transcriptions" + ("   (aceitando da rede)" if cfg["rede"] else ""))
     print("  Feche esta janela para desligar.\n")
