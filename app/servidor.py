@@ -52,6 +52,7 @@ from pydantic import BaseModel  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import baixar_modelo  # noqa: E402
+import mcp_stt  # noqa: E402
 import silencio  # noqa: E402
 
 VERSAO = "2.0.0-dev"
@@ -358,6 +359,14 @@ async def protege_rotas_da_tela(request: Request, call_next):
     não podem ser chamadas por um site qualquer aberto no navegador: pedido com Origin de
     outro endereço é recusado. Sem Origin (curl, scripts), só desta máquina.
     """
+    if request.url.path.startswith("/mcp"):
+        # Proteção contra "DNS rebinding" exigida pelo MCP: navegador de outro site não entra.
+        origem = request.headers.get("origin")
+        if origem:
+            from urllib.parse import urlsplit
+            host_origem = (urlsplit(origem).hostname or "").lower()
+            if host_origem not in ("127.0.0.1", "localhost", "::1") and urlsplit(origem).netloc.lower() != (request.headers.get("host") or "").lower():
+                return JSONResponse({"detail": "Pedido de outro site recusado."}, status_code=403)
     if request.url.path.startswith("/api/"):
         origem = request.headers.get("origin")
         if origem:
@@ -428,9 +437,51 @@ def health():
             "formatos": sorted(EXTENSOES)}
 
 
+def _status_mcp() -> dict[str, Any]:
+    porta = ler_config()["porta"]
+    return {"estado": estado_servico(), "modelo": MODELO_ID, "versao": VERSAO, "nucleos": E.nucleos,
+            "trava_silencio": E.detector is not None and E.trava_ligada,
+            "endpoint": f"http://127.0.0.1:{porta}/v1/audio/transcriptions", "mcp": f"http://127.0.0.1:{porta}/mcp",
+            "tela": f"http://127.0.0.1:{porta}/", "download": DOWNLOAD.resumo() if DOWNLOAD.ativo() else None}
+
+
+MCP = mcp_stt.ServidorMCP(
+    VERSAO,
+    transcrever=lambda conteudo, formato, com_palavras: _rodar(conteudo, formato, None, com_palavras),
+    status=_status_mcp, porta=lambda: ler_config()["porta"],
+    extensoes=EXTENSOES, max_bytes=MAX_ARQUIVO_MB * 2**20,
+)
+
+
+@app.post("/mcp")
+async def rota_mcp(request: Request):
+    from starlette.concurrency import run_in_threadpool
+    from starlette.responses import Response
+    try:
+        mensagem = await request.json()
+    except Exception:  # noqa: BLE001
+        return JSONResponse({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "JSON inválido"}}, status_code=400)
+    resposta = await run_in_threadpool(MCP.atender, mensagem, _cliente_local(request))
+    if resposta is None:
+        return Response(status_code=202)
+    return JSONResponse(resposta)
+
+
+@app.get("/mcp")
+def rota_mcp_get():
+    # Sem canal de eventos do servidor: o cliente usa só POST (permitido pelo transporte).
+    return JSONResponse({"detail": "Use POST (Streamable HTTP, respostas em JSON)."}, status_code=405, headers={"Allow": "POST"})
+
+
+@app.delete("/mcp")
+def rota_mcp_delete():
+    from starlette.responses import Response
+    return Response(status_code=405)
+
+
 @app.get("/v1/models")
 def modelos():
-    return {"object": "list", "data": [{"id": MODELO_ID, "object": "model", "owned_by": "stt-portatil"}]}
+    return {"object": "list", "data": [{"id": MODELO_ID, "object": "model", "owned_by": "stt-local"}]}
 
 
 # ── Tela ──────────────────────────────────────────────────
